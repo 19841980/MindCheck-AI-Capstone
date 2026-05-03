@@ -1,0 +1,60 @@
+.emotion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform var(--transition-fast);
+}
+
+.emotion-badge:hover {
+  transform: scale(1.03);
+}
+
+.emotion-badge__icon {
+  font-size: 0.85em;
+}
+
+.emotion-badge--sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.emotion-badge--lg {
+  padding: 5px 14px;
+  font-size: var(--font-size-sm);
+}
+
+/* Emotion Variants */
+.emotion-badge--ansiedad {
+  background: rgba(231, 111, 81, 0.12);
+  color: #C85A3B;
+}
+.emotion-badge--calma {
+  background: rgba(64, 145, 108, 0.12);
+  color: #2D7A50;
+}
+.emotion-badge--estres {
+  background: rgba(230, 57, 70, 0.12);
+  color: #C83040;
+}
+.emotion-badge--alegria {
+  background: rgba(58, 124, 165, 0.12);
+  color: #2C6485;
+}
+.emotion-badge--tristeza {
+  background: rgba(123, 104, 238, 0.12);
+  color: #6350CC;
+}
+.emotion-badge--frustracion {
+  background: rgba(244, 162, 97, 0.12);
+  color: #C87A3B;
+}
+.emotion-badge--unknown {
+  background: var(--color-sentiment-neutral-bg);
+  color: var(--color-text-secondary);
+}

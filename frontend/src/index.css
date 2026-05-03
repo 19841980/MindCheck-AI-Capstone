@@ -1,0 +1,304 @@
+/* ============================================
+   MindCheck Design System — Core Tokens
+   ============================================ */
+
+/* Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ---- CSS Custom Properties (Design Tokens) ---- */
+:root {
+  /* --- Brand Colors --- */
+  --color-primary: #2D6A4F;
+  --color-primary-light: #40916C;
+  --color-primary-lighter: #52B788;
+  --color-primary-lightest: #D8F3DC;
+  --color-primary-dark: #1B4332;
+
+  --color-secondary: #3A7CA5;
+  --color-secondary-light: #5DADE2;
+  --color-secondary-lighter: #AED9F0;
+  --color-secondary-dark: #2C6485;
+
+  /* --- Sentiment Colors --- */
+  --color-sentiment-positive: #40916C;
+  --color-sentiment-positive-bg: rgba(64, 145, 108, 0.1);
+  --color-sentiment-neutral: #6C757D;
+  --color-sentiment-neutral-bg: rgba(108, 117, 125, 0.1);
+  --color-sentiment-negative: #E63946;
+  --color-sentiment-negative-bg: rgba(230, 57, 70, 0.1);
+
+  /* --- Risk Level Colors --- */
+  --color-risk-low: #40916C;
+  --color-risk-low-bg: rgba(64, 145, 108, 0.1);
+  --color-risk-moderate: #F4A261;
+  --color-risk-moderate-bg: rgba(244, 162, 97, 0.12);
+  --color-risk-high: #E76F51;
+  --color-risk-high-bg: rgba(231, 111, 81, 0.12);
+  --color-risk-critical: #E63946;
+  --color-risk-critical-bg: rgba(230, 57, 70, 0.12);
+
+  /* --- Emotion Colors --- */
+  --color-emotion-ansiedad: #E76F51;
+  --color-emotion-calma: #40916C;
+  --color-emotion-estres: #E63946;
+  --color-emotion-alegria: #3A7CA5;
+  --color-emotion-tristeza: #7B68EE;
+  --color-emotion-frustracion: #F4A261;
+
+  /* --- Surface Colors (Light Mode) --- */
+  --color-bg-primary: #F8FAF9;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #F1F5F3;
+  --color-bg-sidebar: #FAFCFB;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-hover: #F4F8F6;
+  --color-bg-overlay: rgba(0, 0, 0, 0.4);
+  --color-bg-input: #FFFFFF;
+
+  /* --- Text Colors --- */
+  --color-text-primary: #1A1D1E;
+  --color-text-secondary: #5A6268;
+  --color-text-tertiary: #8B9299;
+  --color-text-on-primary: #FFFFFF;
+  --color-text-on-dark: #F8FAF9;
+  --color-text-link: #2D6A4F;
+
+  /* --- Border Colors --- */
+  --color-border: #E2E8E5;
+  --color-border-light: #EEF2F0;
+  --color-border-focus: #40916C;
+  --color-border-error: #E63946;
+
+  /* --- Spacing Scale --- */
+  --space-2xs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* --- Typography --- */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.8125rem;  /* 13px */
+  --font-size-base: 0.875rem; /* 14px */
+  --font-size-md: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* --- Border Radius --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+
+  /* --- Shadows --- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 1px 3px rgba(45, 106, 79, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 25px rgba(45, 106, 79, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+
+  /* --- Transitions --- */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+  --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* --- Layout --- */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --content-max-width: 1200px;
+  --right-panel-width: 320px;
+}
+
+/* ---- Dark Mode Tokens ---- */
+[data-theme="dark"] {
+  --color-bg-primary: #0F1614;
+  --color-bg-secondary: #1A2420;
+  --color-bg-tertiary: #1F2E28;
+  --color-bg-sidebar: #141E1A;
+  --color-bg-card: #1A2420;
+  --color-bg-card-hover: #223830;
+  --color-bg-input: #1A2420;
+
+  --color-text-primary: #E8F0EC;
+  --color-text-secondary: #9EAAA4;
+  --color-text-tertiary: #6B7A72;
+  --color-text-link: #52B788;
+
+  --color-border: #2A3F35;
+  --color-border-light: #223028;
+  --color-border-focus: #52B788;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   Reset & Base Styles
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-text-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-light);
+}
+
+button {
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: inherit;
+}
+
+input, textarea, select {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-border-light) 50%,
+    var(--color-bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-slide-in {
+  animation: slideInRight 0.4s ease forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease forwards;
+}
+
+/* ============================================
+   Responsive Breakpoints (mobile-first)
+   ============================================ */
+
+/* Styles below are mobile-first.
+   Use @media (min-width: 768px) for tablet
+   Use @media (min-width: 1024px) for desktop
+   Use @media (min-width: 1280px) for large desktop
+*/

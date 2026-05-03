@@ -1,0 +1,93 @@
+.alert-banner {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid;
+}
+
+.alert-banner--moderate {
+  background: linear-gradient(135deg, #FFF4E6 0%, #FFECD2 100%);
+  border-color: rgba(244, 162, 97, 0.3);
+  color: #8B5E34;
+}
+
+.alert-banner--high {
+  background: linear-gradient(135deg, #FFEEE8 0%, #FFE0D6 100%);
+  border-color: rgba(231, 111, 81, 0.3);
+  color: #8B4030;
+}
+
+.alert-banner--critical {
+  background: linear-gradient(135deg, #FFE8EA 0%, #FFD4D8 100%);
+  border-color: rgba(230, 57, 70, 0.3);
+  color: #8B2030;
+}
+
+[data-theme="dark"] .alert-banner--moderate {
+  background: linear-gradient(135deg, rgba(244, 162, 97, 0.12) 0%, rgba(244, 162, 97, 0.06) 100%);
+  color: #F4A261;
+}
+
+[data-theme="dark"] .alert-banner--high {
+  background: linear-gradient(135deg, rgba(231, 111, 81, 0.12) 0%, rgba(231, 111, 81, 0.06) 100%);
+  color: #E76F51;
+}
+
+[data-theme="dark"] .alert-banner--critical {
+  background: linear-gradient(135deg, rgba(230, 57, 70, 0.12) 0%, rgba(230, 57, 70, 0.06) 100%);
+  color: #E63946;
+}
+
+.alert-banner__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.alert-banner__icon {
+  font-size: var(--font-size-md);
+}
+
+.alert-banner__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+.alert-banner__message {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-md);
+  opacity: 0.85;
+}
+
+.alert-banner__action {
+  display: block;
+  width: 100%;
+  padding: 10px var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: pointer;
+}
+
+.alert-banner--moderate .alert-banner__action {
+  background: #E76F51;
+  color: white;
+}
+
+.alert-banner--high .alert-banner__action {
+  background: #E63946;
+  color: white;
+}
+
+.alert-banner--critical .alert-banner__action {
+  background: #C1121F;
+  color: white;
+}
+
+.alert-banner__action:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}

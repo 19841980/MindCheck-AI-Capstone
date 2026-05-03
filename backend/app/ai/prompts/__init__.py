@@ -1,0 +1,1 @@
+"""MindCheck AI prompts package."""

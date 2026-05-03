@@ -1,0 +1,22 @@
+[project]
+name = "mindcheck-backend"
+version = "0.1.0"
+description = "MindCheck — Backend API for student mental wellness monitoring"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "supabase>=2.4.0",
+    "openai>=1.14.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "python-jose[cryptography]>=3.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]

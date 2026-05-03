@@ -1,0 +1,1 @@
+"""MindCheck Backend — Core package."""
