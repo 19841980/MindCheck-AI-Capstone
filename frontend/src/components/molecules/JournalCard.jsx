@@ -1,6 +1,6 @@
 import EmotionBadge from '../atoms/EmotionBadge';
 import RiskIndicator from '../atoms/RiskIndicator';
-import { formatRelativeDate, formatTime } from '../../data/mockData';
+import { formatRelativeDate, formatTime } from '../../utils/dateUtils';
 import './JournalCard.css';
 
 /**

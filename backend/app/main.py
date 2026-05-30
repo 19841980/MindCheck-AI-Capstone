@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.routers.journal_router import router as journal_router
+from app.routers.resources_router import router as resources_router
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -88,6 +89,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # --- Mount Routers ---
 app.include_router(journal_router)
+app.include_router(resources_router)
 
 
 # --- Health Check ---

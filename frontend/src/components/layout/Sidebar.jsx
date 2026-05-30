@@ -10,7 +10,7 @@ import './Sidebar.css';
  * Uses NavLink for active state highlighting.
  * Accessible via keyboard navigation.
  */
-export default function Sidebar({ notificationCount = 0, darkMode, onToggleDarkMode }) {
+export default function Sidebar({ notificationCount = 0, darkMode, onToggleDarkMode, onLogout }) {
   const location = useLocation();
 
   const navItems = [
@@ -100,6 +100,17 @@ export default function Sidebar({ notificationCount = 0, darkMode, onToggleDarkM
           {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           <span className="sidebar__nav-label">{darkMode ? 'Modo claro' : 'Modo oscuro'}</span>
         </button>
+        {onLogout && (
+          <button
+            className="sidebar__nav-link sidebar__logout-btn"
+            onClick={onLogout}
+            aria-label="Cerrar sesión"
+            id="btn-logout"
+          >
+            <LogOut size={18} />
+            <span className="sidebar__nav-label">Cerrar sesión</span>
+          </button>
+        )}
         <div className="sidebar__encrypted">
           <Shield size={14} />
           <div>

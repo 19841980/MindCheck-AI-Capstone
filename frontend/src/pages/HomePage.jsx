@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 import { Plus, ChevronRight, TrendingUp, Flame, Brain } from 'lucide-react';
@@ -7,6 +7,14 @@ import RiskIndicator from '../components/atoms/RiskIndicator';
 import JournalCard from '../components/molecules/JournalCard';
 import AlertBanner from '../components/molecules/AlertBanner';
 import ResourceCard from '../components/molecules/ResourceCard';
+import { journalApi, resourcesApi } from '../services/api';
+import {
+  calculateWellbeingScore,
+  calculateStreak,
+  calculateEmotionFrequency,
+  calculateEmotionTrend,
+  getLastAnalysis,
+} from '../utils/statsUtils';
 import {
   MOCK_USER,
   MOCK_WELLBEING_STATS,
@@ -22,6 +30,43 @@ import {
 import './HomePage.css';
 
 /**
+ * Maps a single backend entry (snake_case) to the camelCase format
+ * expected by JournalCard and other frontend components.
+ */
+function mapEntry(entry) {
+  return {
+    id: entry.id,
+    content: entry.content || 'Entrada cifrada — ver detalle para descifrar.',
+    sentimentScore: entry.sentiment_score ?? 0,
+    dominantEmotion: entry.dominant_emotion
+      ? entry.dominant_emotion.charAt(0).toUpperCase() + entry.dominant_emotion.slice(1)
+      : 'Otro',
+    riskLevel: entry.risk_level
+      ? entry.risk_level.charAt(0).toUpperCase() + entry.risk_level.slice(1)
+      : 'Bajo',
+    keywords: entry.keywords || [],
+    createdAt: entry.created_at,
+  };
+}
+
+/**
+ * Maps a backend resource (snake_case) to the camelCase format
+ * expected by ResourceCard.
+ */
+function mapResource(r) {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    type: r.resource_type,
+    duration: r.duration,
+    emotionTags: r.emotion_tags || [],
+    icon: r.icon,
+    visited: false,
+  };
+}
+
+/**
  * HomePage — Main landing page after login.
  * Matches the provided design mockup with:
  * - Greeting + date
@@ -33,18 +78,103 @@ import './HomePage.css';
  */
 export default function HomePage() {
   const [trendPeriod, setTrendPeriod] = useState('7d');
-  const user = MOCK_USER;
-  const stats = MOCK_WELLBEING_STATS;
-  const alerts = MOCK_ALERTS;
-  const resources = MOCK_RESOURCES.slice(0, 3);
+  const [rawEntries, setRawEntries] = useState([]);
+  const [resources, setResources] = useState(MOCK_RESOURCES.slice(0, 3));
+  const [isLoading, setIsLoading] = useState(true);
 
-  const trendData = useMemo(() => {
-    switch (trendPeriod) {
-      case '30d': return MOCK_EMOTION_TREND_30D;
-      case '90d': return MOCK_EMOTION_TREND_90D;
-      default: return MOCK_EMOTION_TREND_7D;
+  // Auth not implemented yet — keep mock user and alerts
+  const user = MOCK_USER;
+  const alerts = MOCK_ALERTS;
+
+  /**
+   * Fetches journal entries and resources in parallel on mount.
+   * Uses Promise.all with individual .catch() so one failing endpoint
+   * doesn't prevent the other from loading.
+   */
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const [entriesRes, resourcesRes] = await Promise.all([
+          journalApi.getEntries().catch(() => null),
+          resourcesApi.getAll().catch(() => null),
+        ]);
+        if (entriesRes?.entries?.length > 0) {
+          setRawEntries(entriesRes.entries);
+        }
+        if (resourcesRes?.resources?.length > 0) {
+          setResources(resourcesRes.resources.map(mapResource).slice(0, 3));
+        }
+      } catch (err) {
+        // Both calls failed — fallback to mocks (already set as defaults)
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [trendPeriod]);
+    loadData();
+  }, []);
+
+  /**
+   * Compute wellbeing stats from real entries.
+   * Falls back to MOCK_WELLBEING_STATS when no real data exists yet.
+   */
+  const stats = useMemo(() => {
+    if (rawEntries.length === 0) return MOCK_WELLBEING_STATS;
+    const { weeklyScore, weeklyScoreChange } = calculateWellbeingScore(rawEntries);
+    const { streak, streakDays } = calculateStreak(rawEntries);
+    const lastAnalysis = getLastAnalysis(rawEntries);
+    return {
+      weeklyScore,
+      weeklyScoreChange,
+      registrationStreak: streak,
+      streakDays,
+      lastAnalysis: lastAnalysis
+        ? { ...lastAnalysis, resourceCount: 2 }
+        : MOCK_WELLBEING_STATS.lastAnalysis,
+    };
+  }, [rawEntries]);
+
+  /**
+   * Build trend data for the emotional chart.
+   * Falls back to mock trend data when not enough real data points exist.
+   */
+  const trendData = useMemo(() => {
+    if (rawEntries.length === 0) {
+      switch (trendPeriod) {
+        case '30d': return MOCK_EMOTION_TREND_30D;
+        case '90d': return MOCK_EMOTION_TREND_90D;
+        default: return MOCK_EMOTION_TREND_7D;
+      }
+    }
+    const days = trendPeriod === '90d' ? 90 : trendPeriod === '30d' ? 30 : 7;
+    const realTrend = calculateEmotionTrend(rawEntries, days);
+    // If not enough real data points, fall back to mock
+    if (realTrend.length < 2) {
+      switch (trendPeriod) {
+        case '30d': return MOCK_EMOTION_TREND_30D;
+        case '90d': return MOCK_EMOTION_TREND_90D;
+        default: return MOCK_EMOTION_TREND_7D;
+      }
+    }
+    return realTrend;
+  }, [rawEntries, trendPeriod]);
+
+  /**
+   * Frequent emotions computed from real data, with mock fallback.
+   */
+  const frequentEmotions = useMemo(() => {
+    if (rawEntries.length === 0) return MOCK_FREQUENT_EMOTIONS;
+    const real = calculateEmotionFrequency(rawEntries);
+    return real.length > 0 ? real : MOCK_FREQUENT_EMOTIONS;
+  }, [rawEntries]);
+
+  /**
+   * Recent entries — show the 2 most recent (real mapped or mock fallback).
+   */
+  const recentEntries = useMemo(() => {
+    if (rawEntries.length === 0) return MOCK_JOURNAL_ENTRIES.slice(0, 2);
+    return rawEntries.slice(0, 2).map(mapEntry);
+  }, [rawEntries]);
 
   const now = new Date();
   const greeting = now.getHours() < 12 ? '¡Buenos días' : now.getHours() < 18 ? '¡Buenas tardes' : '¡Buenas noches';
@@ -66,49 +196,67 @@ export default function HomePage() {
           {/* Wellbeing Score */}
           <div className="stat-card" id="stat-bienestar">
             <span className="stat-card__label">BIENESTAR SEMANAL</span>
-            <div className="stat-card__value stat-card__value--primary">{stats.weeklyScore}</div>
-            <div className="stat-card__bar">
-              <div
-                className="stat-card__bar-fill stat-card__bar-fill--primary"
-                style={{ width: `${stats.weeklyScore}%` }}
-              />
-            </div>
-            <span className="stat-card__change stat-card__change--positive">
-              ↑ +{stats.weeklyScoreChange} puntos vs semana pasada
-            </span>
+            {isLoading ? (
+              <div className="skeleton" style={{ width: '60%', height: 32, marginBottom: 8 }} />
+            ) : (
+              <>
+                <div className="stat-card__value stat-card__value--primary">{stats.weeklyScore}</div>
+                <div className="stat-card__bar">
+                  <div
+                    className="stat-card__bar-fill stat-card__bar-fill--primary"
+                    style={{ width: `${stats.weeklyScore}%` }}
+                  />
+                </div>
+                <span className="stat-card__change stat-card__change--positive">
+                  ↑ +{stats.weeklyScoreChange} puntos vs semana pasada
+                </span>
+              </>
+            )}
           </div>
 
           {/* Registration Streak */}
           <div className="stat-card" id="stat-racha">
             <span className="stat-card__label">RACHA DE REGISTROS</span>
-            <div className="stat-card__value">
-              {stats.registrationStreak} <span className="stat-card__fire" aria-label="Racha activa">🔥</span>
-            </div>
-            <div className="stat-card__streak-days">
-              {stats.streakDays.map((day, i) => (
-                <span key={i} className="stat-card__streak-day stat-card__streak-day--active">
-                  {day}
-                </span>
-              ))}
-              <span className="stat-card__streak-day">S</span>
-              <span className="stat-card__streak-day">D</span>
-            </div>
-            <span className="stat-card__change">días consecutivos esta semana</span>
+            {isLoading ? (
+              <div className="skeleton" style={{ width: '50%', height: 32, marginBottom: 8 }} />
+            ) : (
+              <>
+                <div className="stat-card__value">
+                  {stats.registrationStreak} <span className="stat-card__fire" aria-label="Racha activa">🔥</span>
+                </div>
+                <div className="stat-card__streak-days">
+                  {stats.streakDays.map((day, i) => (
+                    <span key={i} className="stat-card__streak-day stat-card__streak-day--active">
+                      {day}
+                    </span>
+                  ))}
+                  <span className="stat-card__streak-day">S</span>
+                  <span className="stat-card__streak-day">D</span>
+                </div>
+                <span className="stat-card__change">días consecutivos esta semana</span>
+              </>
+            )}
           </div>
 
           {/* Last Analysis */}
           <div className="stat-card" id="stat-ultimo-analisis">
             <span className="stat-card__label">ÚLTIMO ANÁLISIS IA</span>
-            <div className="stat-card__value stat-card__value--negative">
-              {stats.lastAnalysis.sentimentScore.toFixed(2)}
-            </div>
-            <div className="stat-card__badges">
-              <EmotionBadge emotion={stats.lastAnalysis.dominantEmotion} size="sm" />
-              <RiskIndicator level={stats.lastAnalysis.riskLevel} size="sm" />
-            </div>
-            <span className="stat-card__change">
-              Ayer, {new Date(stats.lastAnalysis.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} · {stats.lastAnalysis.resourceCount} recursos sugeridos
-            </span>
+            {isLoading ? (
+              <div className="skeleton" style={{ width: '40%', height: 32, marginBottom: 8 }} />
+            ) : (
+              <>
+                <div className="stat-card__value stat-card__value--negative">
+                  {stats.lastAnalysis.sentimentScore.toFixed(2)}
+                </div>
+                <div className="stat-card__badges">
+                  <EmotionBadge emotion={stats.lastAnalysis.dominantEmotion} size="sm" />
+                  <RiskIndicator level={stats.lastAnalysis.riskLevel} size="sm" />
+                </div>
+                <span className="stat-card__change">
+                  Ayer, {new Date(stats.lastAnalysis.timestamp).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} · {stats.lastAnalysis.resourceCount} recursos sugeridos
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -197,9 +345,16 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="home-page__entries-list">
-            {MOCK_JOURNAL_ENTRIES.slice(0, 2).map((entry) => (
-              <JournalCard key={entry.id} entry={entry} />
-            ))}
+            {isLoading ? (
+              <>
+                <JournalCard state="loading" />
+                <JournalCard state="loading" />
+              </>
+            ) : (
+              recentEntries.map((entry) => (
+                <JournalCard key={entry.id} entry={entry} />
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -251,7 +406,7 @@ export default function HomePage() {
         <div className="panel-section animate-slide-in" style={{ animationDelay: '0.1s' }} id="panel-emociones">
           <h3 className="panel-section__title">Emociones frecuentes</h3>
           <div className="emotion-bars">
-            {MOCK_FREQUENT_EMOTIONS.map((item) => (
+            {frequentEmotions.map((item) => (
               <div key={item.emotion} className="emotion-bar">
                 <span className="emotion-bar__label">{item.emotion}</span>
                 <div className="emotion-bar__track">

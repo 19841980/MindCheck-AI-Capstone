@@ -6,19 +6,36 @@
  *
  * Handles:
  * - Base URL configuration
- * - Auth headers (JWT from Supabase session)
+ * - Auth headers (JWT from Supabase session — auto-refreshed)
  * - Error interceptors
  * - Request/response transformation
  * - Manual emotion fallback (SRS §6.3)
  */
 
+import { supabase } from './supabaseClient';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
  * Base fetch wrapper with auth headers and error handling.
+ *
+ * Reads the access_token from the current Supabase session.
+ * Supabase JS handles token refresh automatically, so this
+ * always gets the freshest valid token.
+ *
+ * The backend verifies this JWT using SUPABASE_JWT_SECRET and
+ * extracts the student_id from the 'sub' claim automatically.
+ * Requests without a valid token will receive 401/403 errors.
  */
 async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem('mindcheck_token');
+  // Read the JWT from Supabase Auth session (auto-refreshed)
+  let token = null;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token || null;
+  } catch {
+    // Session retrieval failed — proceed without token
+  }
 
   const config = {
     headers: {
@@ -106,10 +123,24 @@ export const journalApi = {
   },
 };
 
+
 // --- Health Check ---
 
 export async function checkApiHealth() {
   return apiFetch('/health');
 }
+
+// --- Resources API ---
+
+export const resourcesApi = {
+  /**
+   * Get all active self-help resources.
+   * GET /api/v1/resources
+   */
+  async getAll(emotion = null) {
+    const params = emotion ? `?emotion=${encodeURIComponent(emotion)}` : '';
+    return apiFetch(`/api/v1/resources${params}`);
+  },
+};
 
 export default apiFetch;
