@@ -93,8 +93,11 @@ async def analyze_journal_entry(
     # Check for risk alerts after analysis (only if AI succeeded)
     alert = None
     if result.get("analysis"):
+        from uuid import UUID as _UUID
+        entry_id = _UUID(result["entry"]["id"])
         alert = await alert_service.detect_risk_pattern_in_entries(
             student_id=student_id,
+            entry_id=entry_id,
             latest_analysis=result["analysis"],
         )
 

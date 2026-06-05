@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     # --- Encryption ---
     encryption_key: str = ""
 
+    # --- Email / SMTP (for critical alerts to bienestar team) ---
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    bienestar_email: str = ""
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
