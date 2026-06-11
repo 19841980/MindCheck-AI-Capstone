@@ -15,7 +15,7 @@ export default function Sidebar({ notificationCount = 0, darkMode, onToggleDarkM
 
   const navItems = [
     { path: '/', icon: Home, label: 'Inicio' },
-    { path: '/bitacora', icon: BookOpen, label: 'Mi bitácora', badge: 5 },
+    { path: '/bitacora', icon: BookOpen, label: 'Mi bitácora' },
     { path: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/recursos', icon: Heart, label: 'Recursos' },
   ];

@@ -143,4 +143,34 @@ export const resourcesApi = {
   },
 };
 
+// --- Alerts API ---
+
+export const alertsApi = {
+  /**
+   * Get paginated alerts for the authenticated student.
+   * GET /api/v1/alerts
+   */
+  async getAlerts(limit = 20, offset = 0) {
+    return apiFetch(`/api/v1/alerts/?limit=${limit}&offset=${offset}`);
+  },
+
+  /**
+   * Get unread (unacknowledged) alert count for the notification badge.
+   * GET /api/v1/alerts/unread-count
+   */
+  async getUnreadCount() {
+    return apiFetch('/api/v1/alerts/unread-count');
+  },
+
+  /**
+   * Mark an alert as acknowledged (read). Immutable — cannot undo.
+   * PATCH /api/v1/alerts/:id/acknowledge
+   */
+  async acknowledgeAlert(alertId) {
+    return apiFetch(`/api/v1/alerts/${alertId}/acknowledge`, {
+      method: 'PATCH',
+    });
+  },
+};
+
 export default apiFetch;

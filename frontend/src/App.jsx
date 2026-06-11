@@ -5,14 +5,17 @@
  * When a session exists (login/signup/token refresh), the app renders
  * the authenticated layout. Otherwise, the login page is shown.
  *
- * The Supabase user metadata is mapped to MOCK_USER shape for
- * backwards compatibility with existing components (Header, Sidebar)
- * until the backend auth integration is completed (Phase 2).
+ * Provides UserContext so any page can access the authenticated user
+ * without prop-drilling.
+ *
+ * The Supabase user metadata is mapped to the app's user shape for
+ * Header, Sidebar, and page-level greeting components.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { supabase } from './services/supabaseClient';
+import { alertsApi } from './services/api';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import HomePage from './pages/HomePage';
@@ -21,16 +24,21 @@ import NewEntryPage from './pages/NewEntryPage';
 import DashboardPage from './pages/DashboardPage';
 import ResourcesPage from './pages/ResourcesPage';
 import LoginPage from './pages/LoginPage';
-import { MOCK_USER, MOCK_NOTIFICATIONS } from './data/mockData';
 import './App.css';
 
 /**
+ * UserContext — Provides the authenticated user object to all pages.
+ * Consumed via useContext(UserContext) in any child component.
+ */
+export const UserContext = createContext(null);
+
+/**
  * Builds a user object compatible with the existing Header/Sidebar
- * from the Supabase user metadata. Falls back to MOCK_USER fields
+ * from the Supabase user metadata. Falls back to sensible defaults
  * when metadata is incomplete.
  */
 function buildUserFromSession(supabaseUser) {
-  if (!supabaseUser) return MOCK_USER;
+  if (!supabaseUser) return null;
 
   const email = supabaseUser.email || '';
   const meta = supabaseUser.user_metadata || {};
@@ -47,23 +55,40 @@ function buildUserFromSession(supabaseUser) {
     lastName: capitalizedLast,
     initials: `${capitalizedFirst.charAt(0)}${capitalizedLast.charAt(0) || ''}`.toUpperCase(),
     email,
-    sede: meta.sede || MOCK_USER.sede,
-    carrera: meta.carrera || MOCK_USER.carrera,
+    sede: meta.sede || 'Sin asignar',
+    carrera: meta.carrera || 'Sin asignar',
     avatarUrl: meta.avatar_url || null,
   };
 }
 
 /**
  * AppLayout — Wraps authenticated pages with Sidebar + Header.
+ * Fetches unread alert count from the backend for the notification badge.
  */
 function AppLayout({ user, darkMode, onToggleDarkMode, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const notifCount = MOCK_NOTIFICATIONS.filter(n => !n.read).length;
+  const [unreadAlertCount, setUnreadAlertCount] = useState(0);
+
+  /**
+   * Fetch unread alert count from backend on mount.
+   * Silent failure — badge shows 0 if the API is unreachable.
+   */
+  useEffect(() => {
+    async function fetchUnreadCount() {
+      try {
+        const response = await alertsApi.getUnreadCount();
+        setUnreadAlertCount(response.unread_count || 0);
+      } catch {
+        // Silent fallback — badge shows 0
+      }
+    }
+    fetchUnreadCount();
+  }, []);
 
   return (
     <div className="app-layout">
       <Sidebar
-        notificationCount={notifCount}
+        notificationCount={unreadAlertCount}
         darkMode={darkMode}
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
@@ -143,26 +168,28 @@ export default function App() {
   const user = buildUserFromSession(session.user);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={
-          <AppLayout
-            user={user}
-            darkMode={darkMode}
-            onToggleDarkMode={handleToggleDarkMode}
-            onLogout={handleLogout}
-          />
-        }>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/bitacora" element={<JournalPage />} />
-          <Route path="/bitacora/nueva" element={<NewEntryPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/recursos" element={<ResourcesPage />} />
-          <Route path="/notificaciones" element={<div style={{padding:'var(--space-xl)'}}><h1>Notificaciones</h1><p style={{color:'var(--color-text-tertiary)',marginTop:'var(--space-sm)'}}>Próximamente — Módulo de notificaciones push.</p></div>} />
-          <Route path="/privacidad" element={<div style={{padding:'var(--space-xl)'}}><h1>Privacidad y seguridad</h1><p style={{color:'var(--color-text-tertiary)',marginTop:'var(--space-sm)'}}>Próximamente — Configuración de privacidad y derecho al olvido.</p></div>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <UserContext.Provider value={user}>
+      <BrowserRouter>
+        <Routes>
+          <Route element={
+            <AppLayout
+              user={user}
+              darkMode={darkMode}
+              onToggleDarkMode={handleToggleDarkMode}
+              onLogout={handleLogout}
+            />
+          }>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/bitacora" element={<JournalPage />} />
+            <Route path="/bitacora/nueva" element={<NewEntryPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/recursos" element={<ResourcesPage />} />
+            <Route path="/notificaciones" element={<div style={{padding:'var(--space-xl)'}}><h1>Notificaciones</h1><p style={{color:'var(--color-text-tertiary)',marginTop:'var(--space-sm)'}}>Próximamente — Módulo de notificaciones push.</p></div>} />
+            <Route path="/privacidad" element={<div style={{padding:'var(--space-xl)'}}><h1>Privacidad y seguridad</h1><p style={{color:'var(--color-text-tertiary)',marginTop:'var(--space-sm)'}}>Próximamente — Configuración de privacidad y derecho al olvido.</p></div>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </UserContext.Provider>
   );
 }

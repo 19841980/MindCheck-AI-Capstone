@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 import { Plus, ChevronRight, TrendingUp, Flame, Brain } from 'lucide-react';
@@ -7,7 +7,8 @@ import RiskIndicator from '../components/atoms/RiskIndicator';
 import JournalCard from '../components/molecules/JournalCard';
 import AlertBanner from '../components/molecules/AlertBanner';
 import ResourceCard from '../components/molecules/ResourceCard';
-import { journalApi, resourcesApi } from '../services/api';
+import { journalApi, resourcesApi, alertsApi } from '../services/api';
+import { UserContext } from '../App';
 import {
   calculateWellbeingScore,
   calculateStreak,
@@ -16,14 +17,12 @@ import {
   getLastAnalysis,
 } from '../utils/statsUtils';
 import {
-  MOCK_USER,
   MOCK_WELLBEING_STATS,
   MOCK_EMOTION_TREND_7D,
   MOCK_EMOTION_TREND_30D,
   MOCK_EMOTION_TREND_90D,
   MOCK_FREQUENT_EMOTIONS,
   MOCK_JOURNAL_ENTRIES,
-  MOCK_ALERTS,
   MOCK_RESOURCES,
   formatDate,
 } from '../data/mockData';
@@ -67,6 +66,22 @@ function mapResource(r) {
 }
 
 /**
+ * Maps a backend alert (snake_case) to the format expected by AlertBanner.
+ */
+function mapAlert(alert) {
+  return {
+    id: alert.id,
+    type: alert.alert_type || alert.risk_level || 'moderate',
+    title: `Alerta ${(alert.risk_level || 'moderada').charAt(0).toUpperCase() + (alert.risk_level || 'moderada').slice(1)}`,
+    message: alert.message,
+    actionLabel: 'Contactar bienestar Duoc UC',
+    actionUrl: '#',
+    triggeredAt: alert.triggered_at,
+    acknowledged: !!alert.acknowledged_at,
+  };
+}
+
+/**
  * HomePage — Main landing page after login.
  * Matches the provided design mockup with:
  * - Greeting + date
@@ -77,27 +92,26 @@ function mapResource(r) {
  * - Right panel: overall wellbeing, frequent emotions, alert, resources
  */
 export default function HomePage() {
+  const user = useContext(UserContext);
   const [trendPeriod, setTrendPeriod] = useState('7d');
   const [rawEntries, setRawEntries] = useState([]);
   const [resources, setResources] = useState(MOCK_RESOURCES.slice(0, 3));
+  const [alerts, setAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Auth not implemented yet — keep mock user and alerts
-  const user = MOCK_USER;
-  const alerts = MOCK_ALERTS;
-
   /**
-   * Fetches journal entries and resources in parallel on mount.
+   * Fetches journal entries, resources, and alerts in parallel on mount.
    * Uses Promise.all with individual .catch() so one failing endpoint
-   * doesn't prevent the other from loading.
+   * doesn't prevent the others from loading.
    */
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [entriesRes, resourcesRes] = await Promise.all([
+        const [entriesRes, resourcesRes, alertsRes] = await Promise.all([
           journalApi.getEntries().catch(() => null),
           resourcesApi.getAll().catch(() => null),
+          alertsApi.getAlerts(5, 0).catch(() => null),
         ]);
         if (entriesRes?.entries?.length > 0) {
           setRawEntries(entriesRes.entries);
@@ -105,8 +119,11 @@ export default function HomePage() {
         if (resourcesRes?.resources?.length > 0) {
           setResources(resourcesRes.resources.map(mapResource).slice(0, 3));
         }
+        if (alertsRes?.alerts?.length > 0) {
+          setAlerts(alertsRes.alerts.filter(a => !a.acknowledged_at).map(mapAlert));
+        }
       } catch (err) {
-        // Both calls failed — fallback to mocks (already set as defaults)
+        // All calls failed — fallback to defaults (already set)
       } finally {
         setIsLoading(false);
       }
@@ -178,6 +195,7 @@ export default function HomePage() {
 
   const now = new Date();
   const greeting = now.getHours() < 12 ? '¡Buenos días' : now.getHours() < 18 ? '¡Buenas tardes' : '¡Buenas noches';
+  const displayName = user?.firstName || 'Estudiante';
 
   return (
     <div className="home-page">
@@ -187,7 +205,7 @@ export default function HomePage() {
         <div className="home-page__greeting animate-fade-in">
           <span className="home-page__date">{formatDate(now.toISOString())} · {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} AM</span>
           <h1 className="home-page__title">
-            {greeting}, {user.firstName} 👋 ¿Cómo estás hoy?
+            {greeting}, {displayName} 👋 ¿Cómo estás hoy?
           </h1>
         </div>
 
@@ -424,7 +442,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Alert */}
+        {/* Alert — Real alerts from backend */}
         {alerts.length > 0 && (
           <div className="animate-slide-in" style={{ animationDelay: '0.15s' }}>
             <AlertBanner alert={alerts[0]} />
