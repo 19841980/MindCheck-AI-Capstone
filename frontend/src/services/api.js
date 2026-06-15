@@ -173,4 +173,18 @@ export const alertsApi = {
   },
 };
 
+// --- Students API ---
+
+export const studentsApi = {
+  /**
+   * Permanently delete the authenticated student's account and all data.
+   * DELETE /api/v1/students/me
+   */
+  async deleteAccount() {
+    return apiFetch('/api/v1/students/me', {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default apiFetch;

@@ -1,0 +1,17 @@
+{
+  "short_name": "MindCheck",
+  "name": "MindCheck — Bienestar Mental Estudiantil",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#2D6A4F",
+  "theme_color": "#2D6A4F",
+  "display": "standalone",
+  "orientation": "portrait"
+}

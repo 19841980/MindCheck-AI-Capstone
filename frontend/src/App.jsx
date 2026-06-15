@@ -24,6 +24,8 @@ import NewEntryPage from './pages/NewEntryPage';
 import DashboardPage from './pages/DashboardPage';
 import ResourcesPage from './pages/ResourcesPage';
 import LoginPage from './pages/LoginPage';
+import NotificacionesPage from './pages/NotificacionesPage';
+import PrivacidadPage from './pages/PrivacidadPage';
 import './App.css';
 
 /**
@@ -83,6 +85,12 @@ function AppLayout({ user, darkMode, onToggleDarkMode, onLogout }) {
       }
     }
     fetchUnreadCount();
+
+    // Listen to custom event when an alert is acknowledged to refresh badge count
+    window.addEventListener('alert-acknowledged', fetchUnreadCount);
+    return () => {
+      window.removeEventListener('alert-acknowledged', fetchUnreadCount);
+    };
   }, []);
 
   return (
@@ -184,8 +192,8 @@ export default function App() {
             <Route path="/bitacora/nueva" element={<NewEntryPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/recursos" element={<ResourcesPage />} />
-            <Route path="/notificaciones" element={<div style={{padding:'var(--space-xl)'}}><h1>Notificaciones</h1><p style={{color:'var(--color-text-tertiary)',marginTop:'var(--space-sm)'}}>Próximamente — Módulo de notificaciones push.</p></div>} />
-            <Route path="/privacidad" element={<div style={{padding:'var(--space-xl)'}}><h1>Privacidad y seguridad</h1><p style={{color:'var(--color-text-tertiary)',marginTop:'var(--space-sm)'}}>Próximamente — Configuración de privacidad y derecho al olvido.</p></div>} />
+            <Route path="/notificaciones" element={<NotificacionesPage />} />
+            <Route path="/privacidad" element={<PrivacidadPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
