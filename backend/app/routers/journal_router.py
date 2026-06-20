@@ -115,6 +115,7 @@ async def save_manual_emotion(
     body: ManualEmotionRequest,
     student_id: UUID = Depends(get_authenticated_student_id),
     journal_service: JournalService = Depends(get_journal_service),
+    alert_service: AlertDetectionService = Depends(get_alert_service),
 ):
     """
     Save a manually selected emotion for an entry (SRS §6.3 fallback).
@@ -128,7 +129,19 @@ async def save_manual_emotion(
             student_id=student_id,
             manual_data=body.model_dump(),
         )
-        return result
+        
+        # Evaluate alerts for the manual fallback entry
+        alert = await alert_service.detect_risk_pattern_in_entries(
+            student_id=student_id,
+            entry_id=UUID(body.entry_id),
+            latest_analysis=result["analysis"],
+        )
+        
+        return {
+            "entry": result["entry"],
+            "analysis": result["analysis"],
+            "alert": alert,
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

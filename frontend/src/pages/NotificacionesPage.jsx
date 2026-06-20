@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Check, AlertTriangle, Calendar, RefreshCw, Loader2 } from 'lucide-react';
 import { alertsApi } from '../services/api';
 import { formatDate } from '../data/mockData';
+import { pushNotifications } from '../services/notifications';
 import './NotificacionesPage.css';
 
 /**
@@ -13,6 +14,11 @@ export default function NotificacionesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [acknowledgingId, setAcknowledgingId] = useState(null);
+
+  // Web Push Subscription states
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState('default');
+  const [isPushLoading, setIsPushLoading] = useState(false);
 
   /**
    * Fetches student alerts from backend.
@@ -34,7 +40,44 @@ export default function NotificacionesPage() {
 
   useEffect(() => {
     fetchAlerts();
+
+    // Check current push notifications state on mount
+    async function checkPushStatus() {
+      if (!pushNotifications.isSupported()) return;
+      try {
+        const sub = await pushNotifications.getActiveSubscription();
+        setIsSubscribed(!!sub);
+        setPermissionStatus(pushNotifications.getPermissionStatus());
+      } catch (err) {
+        console.error('Error checking push status:', err);
+      }
+    }
+    checkPushStatus();
   }, []);
+
+  /**
+   * Subscribes or unsubscribes the browser for push notifications.
+   */
+  async function togglePush() {
+    setIsPushLoading(true);
+    setError(null);
+    try {
+      if (isSubscribed) {
+        await pushNotifications.unsubscribe();
+        setIsSubscribed(false);
+      } else {
+        await pushNotifications.subscribe();
+        setIsSubscribed(true);
+      }
+      setPermissionStatus(pushNotifications.getPermissionStatus());
+    } catch (err) {
+      setError(
+        err.message || 'No se pudo configurar las notificaciones en este navegador.'
+      );
+    } finally {
+      setIsPushLoading(false);
+    }
+  }
 
   /**
    * Mark an alert as acknowledged (read).
@@ -86,6 +129,48 @@ export default function NotificacionesPage() {
           </button>
         )}
       </div>
+
+      {/* Web Push Subscription Settings Card */}
+      {pushNotifications.isSupported() && (
+        <div className="notificaciones-page__push-card animate-fade-in">
+          <div className="push-card__icon-wrap" aria-hidden="true">
+            <Bell size={20} />
+          </div>
+          <div className="push-card__body">
+            <h3>Notificaciones del sistema</h3>
+            <p>Recibe alertas instantáneas en tu dispositivo cuando detectemos patrones de riesgo emocional.</p>
+            {permissionStatus === 'denied' && (
+              <span className="push-card__status push-card__status--denied">
+                ⚠️ Permiso denegado por el navegador
+              </span>
+            )}
+            {permissionStatus === 'granted' && isSubscribed && (
+              <span className="push-card__status push-card__status--active">
+                ✅ Activas en este navegador
+              </span>
+            )}
+            {(!isSubscribed || permissionStatus === 'default') && permissionStatus !== 'denied' && (
+              <span className="push-card__status push-card__status--inactive">
+                🔔 Desactivadas
+              </span>
+            )}
+          </div>
+          <button
+            onClick={togglePush}
+            disabled={isPushLoading || permissionStatus === 'denied'}
+            className={`push-card__toggle-btn ${isSubscribed ? 'push-card__toggle-btn--active' : ''}`}
+            aria-label={isSubscribed ? "Desactivar notificaciones" : "Activar notificaciones"}
+          >
+            {isPushLoading ? (
+              <Loader2 size={16} className="spin" />
+            ) : isSubscribed ? (
+              'Desactivar'
+            ) : (
+              'Activar'
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (

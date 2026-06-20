@@ -17,6 +17,7 @@ from app.routers.journal_router import router as journal_router
 from app.routers.resources_router import router as resources_router
 from app.routers.alerts_router import router as alerts_router
 from app.routers.students_router import router as students_router
+from app.routers.push_router import router as push_router
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -94,6 +95,7 @@ app.include_router(journal_router)
 app.include_router(resources_router)
 app.include_router(alerts_router)
 app.include_router(students_router)
+app.include_router(push_router)
 
 
 # --- Health Check ---

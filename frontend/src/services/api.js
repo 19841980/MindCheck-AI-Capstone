@@ -187,4 +187,38 @@ export const studentsApi = {
   },
 };
 
+// --- Push Notifications API ---
+
+export const pushApi = {
+  /**
+   * Register or update a Web Push subscription.
+   * POST /api/v1/push/subscribe
+   */
+  async subscribe(subscription) {
+    return apiFetch('/api/v1/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    });
+  },
+
+  /**
+   * Unregister a Web Push subscription.
+   * POST /api/v1/push/unsubscribe
+   */
+  async unsubscribe(endpoint) {
+    return apiFetch('/api/v1/push/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    });
+  },
+
+  /**
+   * Get the backend's VAPID public key.
+   * GET /api/v1/push/vapid-public-key
+   */
+  async getVapidPublicKey() {
+    return apiFetch('/api/v1/push/vapid-public-key');
+  },
+};
+
 export default apiFetch;

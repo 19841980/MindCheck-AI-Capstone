@@ -138,15 +138,18 @@ class JournalService:
             raise ValueError("Esta entrada ya tiene un análisis.")
 
         # Build a minimal analysis from manual selection
+        risk_level = manual_data.get("risk_level", "bajo")
+        crisis_indicators = risk_level == "critico"
+
         fallback_analysis = {
             "sentiment_score": manual_data.get("sentiment_score", 0.0),
             "dominant_emotion": manual_data["dominant_emotion"],
             "secondary_emotions": [],
-            "risk_level": manual_data.get("risk_level", "bajo"),
+            "risk_level": risk_level,
             "risk_justification": "Emoción seleccionada manualmente por el estudiante.",
             "keywords": [],
             "recommendations": [],
-            "crisis_indicators": False,
+            "crisis_indicators": crisis_indicators,
         }
 
         analysis_record = await loop.run_in_executor(

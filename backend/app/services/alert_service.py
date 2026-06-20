@@ -23,6 +23,7 @@ from uuid import UUID
 from app.repositories.journal_repo import JournalRepository
 from app.repositories.alert_repo import AlertRepository
 from app.services.email_service import send_critical_alert_email
+from app.services.push_notification_service import PushNotificationService
 
 logger = logging.getLogger("mindcheck.services.alerts")
 
@@ -40,6 +41,7 @@ class AlertDetectionService:
     def __init__(self):
         self._journal_repo = JournalRepository()
         self._alert_repo = AlertRepository()
+        self._push_service = PushNotificationService()
 
     async def detect_risk_pattern_in_entries(
         self,
@@ -77,7 +79,18 @@ class AlertDetectionService:
             alert_data["message"],
         )
 
-        # For critical alerts, send email to bienestar team (best-effort)
+        # Trigger push notification to student for moderate, high, or critical alerts
+        if alert_data["risk_level"] in ("moderado", "alto", "critico"):
+            await loop.run_in_executor(
+                _executor,
+                self._push_service.send_push_to_student,
+                student_id,
+                f"Alerta de Bienestar: {alert_data['risk_level'].capitalize()}",
+                alert_data["message"],
+                {"alert_id": str(alert_record["id"]), "risk_level": alert_data["risk_level"]},
+            )
+
+        # For critical/high alerts, send email to bienestar team (best-effort)
         if alert_data["risk_level"] in ("critico", "alto"):
             await self._send_bienestar_notification(
                 alert_record=alert_record,

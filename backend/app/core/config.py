@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     bienestar_email: str = ""
 
+    # --- Web Push (for push notifications to students) ---
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_claim_email: str = ""
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"

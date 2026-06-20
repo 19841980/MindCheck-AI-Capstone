@@ -9,3 +9,5 @@ python-dotenv>=1.0.0
 python-jose[cryptography]>=3.3.0
 cryptography>=42.0.0
 aiosmtplib>=3.0.0
+pywebpush>=1.14.0
+
