@@ -1,0 +1,77 @@
+/* ============================================
+   OfflineBanner — PWA Phase 4, Punto 4
+   ============================================ */
+
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  animation: offlineBannerSlideDown 0.3s ease-out;
+}
+
+/* Offline state — warm amber */
+.offline-banner--offline {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-bottom: 1px solid #fbbf24;
+}
+
+/* Reconnected state — soft green */
+.offline-banner--reconnected {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-bottom: 1px solid #34d399;
+  animation: offlineBannerSlideDown 0.3s ease-out, offlineBannerFadeOut 0.5s ease-in 2.5s forwards;
+}
+
+.offline-banner svg {
+  flex-shrink: 0;
+}
+
+/* Slide in from top */
+@keyframes offlineBannerSlideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Fade out before removal */
+@keyframes offlineBannerFadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+/* Push body content down when banner is visible */
+.offline-banner--offline ~ .app-layout {
+  margin-top: 2.5rem;
+}
+
+/* Dark mode support */
+[data-theme='dark'] .offline-banner--offline {
+  background-color: #78350f;
+  color: #fef3c7;
+  border-bottom-color: #b45309;
+}
+
+[data-theme='dark'] .offline-banner--reconnected {
+  background-color: #064e3b;
+  color: #d1fae5;
+  border-bottom-color: #059669;
+}

@@ -27,6 +27,7 @@ import LoginPage from './pages/LoginPage';
 import NotificacionesPage from './pages/NotificacionesPage';
 import PrivacidadPage from './pages/PrivacidadPage';
 import './App.css';
+import OfflineBanner from './components/atoms/OfflineBanner';
 
 /**
  * UserContext — Provides the authenticated user object to all pages.
@@ -176,28 +177,31 @@ export default function App() {
   const user = buildUserFromSession(session.user);
 
   return (
-    <UserContext.Provider value={user}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={
-            <AppLayout
-              user={user}
-              darkMode={darkMode}
-              onToggleDarkMode={handleToggleDarkMode}
-              onLogout={handleLogout}
-            />
-          }>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/bitacora" element={<JournalPage />} />
-            <Route path="/bitacora/nueva" element={<NewEntryPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/recursos" element={<ResourcesPage />} />
-            <Route path="/notificaciones" element={<NotificacionesPage />} />
-            <Route path="/privacidad" element={<PrivacidadPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </UserContext.Provider>
+    <>
+      <OfflineBanner />
+      <UserContext.Provider value={user}>
+        <BrowserRouter>
+          <Routes>
+            <Route element={
+              <AppLayout
+                user={user}
+                darkMode={darkMode}
+                onToggleDarkMode={handleToggleDarkMode}
+                onLogout={handleLogout}
+              />
+            }>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/bitacora" element={<JournalPage />} />
+              <Route path="/bitacora/nueva" element={<NewEntryPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/recursos" element={<ResourcesPage />} />
+              <Route path="/notificaciones" element={<NotificacionesPage />} />
+              <Route path="/privacidad" element={<PrivacidadPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </UserContext.Provider>
+    </>
   );
 }
