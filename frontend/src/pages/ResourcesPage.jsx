@@ -61,6 +61,7 @@ export default function ResourcesPage() {
   const osc2Ref = useRef(null);
   const gainNodeRef = useRef(null);
   const lfoRef = useRef(null);
+  const spokenTimesRef = useRef(new Set());
 
   // Calming speech synthesizer for Spanish guided narration (Ley 19.628 privacy compliant & offline-friendly)
   const speakCalmText = (text) => {
@@ -82,41 +83,6 @@ export default function ResourcesPage() {
     utterance.pitch = 0.92; // Slightly lower pitch for warm calming voice
     utterance.rate = 0.82;  // Calm, relaxed narration pace
     window.speechSynthesis.speak(utterance);
-  };
-
-  const triggerGuidedSpeech = (time) => {
-    if (!('speechSynthesis' in window)) return;
-
-    let phrase = '';
-    switch (time) {
-      case 0:
-        phrase = 'Bienvenido a tu meditación guiada de MindCheck. Busca una postura cómoda, cierra los ojos y concéntrate en tu respiración.';
-        break;
-      case 15:
-        phrase = 'Siente cómo el aire entra y sale de tu cuerpo de forma natural. No intentes forzar nada. Solo observa el ritmo.';
-        break;
-      case 45:
-        phrase = 'Si surge algún pensamiento o distracción en tu mente, reconócelo sin juzgarlo. Déjalo pasar como si fuera una nube flotando en el cielo, y regresa amablemente tu atención a la respiración.';
-        break;
-      case 90:
-        phrase = 'Relaja tu rostro, tus hombros, tu cuello y tu mandíbula. Siente cómo con cada exhalación, cualquier tensión acumulada se disuelve lentamente.';
-        break;
-      case 150:
-        phrase = 'Disfruta de este espacio de calma y quietud. Te estás dedicando un valioso tiempo para cuidar de tu bienestar mental.';
-        break;
-      case 210:
-        phrase = 'Sigue el aire fluyendo por tu cuerpo. Inhalando paz y tranquilidad, exhalando cansancio y preocupación.';
-        break;
-      case 260:
-        phrase = 'Poco a poco, comienza a regresar tu atención al espacio físico que te rodea. Siente el contacto de tus pies con el suelo y vuelve a habitar este momento presente.';
-        break;
-      case 290:
-        phrase = 'Gracias por meditar con nosotros hoy. Cuando te sientas listo, puedes abrir suavemente tus ojos. Que tengas un día lleno de paz y enfoque. Namasté.';
-        break;
-      default:
-        return;
-    }
-    speakCalmText(phrase);
   };
 
   const startMeditationAudio = async () => {
@@ -174,8 +140,6 @@ export default function ResourcesPage() {
     if ('speechSynthesis' in window) {
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
-      } else if (mediaTime === 0) {
-        triggerGuidedSpeech(0);
       }
     }
   };
@@ -281,7 +245,7 @@ export default function ResourcesPage() {
     return () => clearInterval(interval);
   }, [breathingActive, breathingPhase, breathingCycle, selectedResource]);
 
-  // Meditation Timer Loop (updates visual time and triggers audio narration triggers)
+  // Meditation Timer Loop (updates visual time)
   useEffect(() => {
     let interval = null;
     if (mediaPlaying) {
@@ -293,13 +257,37 @@ export default function ResourcesPage() {
             stopMeditationAudio(); // Stop synthesis and sound fully
             return 300;
           }
-          triggerGuidedSpeech(nextTime); // Speak calming guidance in Spanish at specific times
           return nextTime;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [mediaPlaying]);
+
+  // Trigger guided speech when mediaTime changes to prevent skipped triggers or stale closure blocks
+  useEffect(() => {
+    if (!mediaPlaying) return;
+
+    const timings = [
+      { time: 0, phrase: 'Bienvenido a tu meditación guiada de MindCheck. Busca una postura cómoda, cierra los ojos y concéntrate en tu respiración.' },
+      { time: 15, phrase: 'Siente cómo el aire entra y sale de tu cuerpo de forma natural. No intentes forzar nada. Solo observa el ritmo.' },
+      { time: 45, phrase: 'Si surge algún pensamiento o distracción en tu mente, reconócelo sin juzgarlo. Déjalo pasar como si fuera una nube flotando en el cielo, y regresa amablemente tu atención a la respiración.' },
+      { time: 90, phrase: 'Relaja tu rostro, tus hombros, tu cuello y tu mandíbula. Siente cómo con cada exhalación, cualquier tensión acumulada se disuelve lentamente.' },
+      { time: 150, phrase: 'Disfruta de este espacio de calma y quietud. Te estás dedicando un valioso tiempo para cuidar de tu bienestar mental.' },
+      { time: 210, phrase: 'Sigue el aire fluyendo por tu cuerpo. Inhalando paz y tranquilidad, exhalando cansancio y preocupación.' },
+      { time: 260, phrase: 'Poco a poco, comienza a regresar tu atención al espacio físico que te rodea. Siente el contacto de tus pies con el suelo y vuelve a habitar este momento presente.' },
+      { time: 290, phrase: 'Gracias por meditar con nosotros hoy. Cuando te sientas listo, puedes abrir suavemente tus ojos. Que tengas un día lleno de paz y enfoque. Namasté.' }
+    ];
+
+    timings.forEach((item) => {
+      // Use a range check (tolerance of 3 seconds) to ensure that if a tick gets skipped or delayed,
+      // the voice still triggers. Check if we haven't spoken it yet in this session.
+      if (mediaTime >= item.time && mediaTime - item.time <= 3 && !spokenTimesRef.current.has(item.time)) {
+        spokenTimesRef.current.add(item.time);
+        speakCalmText(item.phrase);
+      }
+    });
+  }, [mediaTime, mediaPlaying]);
 
   // Synchronize play/pause state changes to the Web Audio & Web Speech synthesis engine
   useEffect(() => {
@@ -314,11 +302,13 @@ export default function ResourcesPage() {
   useEffect(() => {
     return () => {
       stopMeditationAudio();
+      spokenTimesRef.current.clear();
     };
   }, []);
 
   function handleCloseModal() {
     stopMeditationAudio(); // Stop any running binaural beat or speech synthesizers safely
+    spokenTimesRef.current.clear(); // Reset spoken times tracking
     setSelectedResource(null);
     // Reset all interactive states
     setBreathingActive(false);
