@@ -34,3 +34,5 @@ node_modules/
 
 # OS
 Thumbs.db
+frontend/coverage/
+backend/.coverage

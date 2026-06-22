@@ -1,0 +1,11 @@
+import pytest
+
+@pytest.mark.asyncio
+async def test_health_check(async_client):
+    """Test that health check endpoint returns 200 and correct status JSON."""
+    response = await async_client.get("/health")
+    assert response.status_code == 200
+    json_data = response.json()
+    assert json_data["status"] == "ok"
+    assert "version" in json_data
+    assert "environment" in json_data
