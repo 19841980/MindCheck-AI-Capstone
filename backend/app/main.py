@@ -57,9 +57,14 @@ app = FastAPI(
 
 # --- CORS Middleware ---
 settings = get_settings()
+cors_origins = settings.cors_origins_list
+vercel_production_url = "https://mindcheck-ai.vercel.app"
+if vercel_production_url not in cors_origins:
+    cors_origins.append(vercel_production_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
