@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Heart, Wind, BookOpen, Phone, Search, RefreshCw, X, Play, Pause, CheckCircle } from 'lucide-react';
 import { resourcesApi } from '../services/api';
 import { MOCK_RESOURCES } from '../data/mockData';
@@ -54,6 +54,174 @@ export default function ResourcesPage() {
   const [gratitude2, setGratitude2] = useState('');
   const [gratitude3, setGratitude3] = useState('');
   const [gratitudeSaved, setGratitudeSaved] = useState(false);
+
+  // Refs to control guided meditation audio in client (Web Audio API & Speech Synthesis)
+  const audioContextRef = useRef(null);
+  const osc1Ref = useRef(null);
+  const osc2Ref = useRef(null);
+  const gainNodeRef = useRef(null);
+  const lfoRef = useRef(null);
+
+  // Calming speech synthesizer for Spanish guided narration (Ley 19.628 privacy compliant & offline-friendly)
+  const speakCalmText = (text) => {
+    if (!('speechSynthesis' in window)) return;
+    
+    // Cancel active/queued speech to avoid overlaps
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-CL'; // Spanish (Chile)
+
+    const voices = window.speechSynthesis.getVoices();
+    // Try to find a Spanish voice
+    const esVoice = voices.find((v) => v.lang.startsWith('es'));
+    if (esVoice) {
+      utterance.voice = esVoice;
+    }
+
+    utterance.pitch = 0.92; // Slightly lower pitch for warm calming voice
+    utterance.rate = 0.82;  // Calm, relaxed narration pace
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const triggerGuidedSpeech = (time) => {
+    if (!('speechSynthesis' in window)) return;
+
+    let phrase = '';
+    switch (time) {
+      case 0:
+        phrase = 'Bienvenido a tu meditación guiada de MindCheck. Busca una postura cómoda, cierra los ojos y concéntrate en tu respiración.';
+        break;
+      case 15:
+        phrase = 'Siente cómo el aire entra y sale de tu cuerpo de forma natural. No intentes forzar nada. Solo observa el ritmo.';
+        break;
+      case 45:
+        phrase = 'Si surge algún pensamiento o distracción en tu mente, reconócelo sin juzgarlo. Déjalo pasar como si fuera una nube flotando en el cielo, y regresa amablemente tu atención a la respiración.';
+        break;
+      case 90:
+        phrase = 'Relaja tu rostro, tus hombros, tu cuello y tu mandíbula. Siente cómo con cada exhalación, cualquier tensión acumulada se disuelve lentamente.';
+        break;
+      case 150:
+        phrase = 'Disfruta de este espacio de calma y quietud. Te estás dedicando un valioso tiempo para cuidar de tu bienestar mental.';
+        break;
+      case 210:
+        phrase = 'Sigue el aire fluyendo por tu cuerpo. Inhalando paz y tranquilidad, exhalando cansancio y preocupación.';
+        break;
+      case 260:
+        phrase = 'Poco a poco, comienza a regresar tu atención al espacio físico que te rodea. Siente el contacto de tus pies con el suelo y vuelve a habitar este momento presente.';
+        break;
+      case 290:
+        phrase = 'Gracias por meditar con nosotros hoy. Cuando te sientas listo, puedes abrir suavemente tus ojos. Que tengas un día lleno de paz y enfoque. Namasté.';
+        break;
+      default:
+        return;
+    }
+    speakCalmText(phrase);
+  };
+
+  const startMeditationAudio = async () => {
+    if (!audioContextRef.current) {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContextClass();
+        audioContextRef.current = audioCtx;
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime); // Gentle soft volume
+        gainNodeRef.current = gainNode;
+
+        const filterNode = audioCtx.createBiquadFilter();
+        filterNode.type = 'lowpass';
+        filterNode.frequency.setValueAtTime(130, audioCtx.currentTime); // Low pass filter for warm ambient sound
+
+        const osc1 = audioCtx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(98, audioCtx.currentTime); // Low G
+        osc1Ref.current = osc1;
+
+        const osc2 = audioCtx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(102, audioCtx.currentTime); // Binaural beat delta tone (4Hz diff)
+        osc2Ref.current = osc2;
+
+        const lfo = audioCtx.createOscillator();
+        lfo.frequency.setValueAtTime(0.08, audioCtx.currentTime); // 12-second breathing wave
+        lfoRef.current = lfo;
+
+        const lfoGain = audioCtx.createGain();
+        lfoGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(gainNode.gain);
+
+        osc1.connect(filterNode);
+        osc2.connect(filterNode);
+        filterNode.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc1.start(0);
+        osc2.start(0);
+        lfo.start(0);
+      } catch (err) {
+        console.error('[MindCheck] Falló iniciar AudioContext:', err);
+      }
+    }
+
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+
+    if ('speechSynthesis' in window) {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      } else if (mediaTime === 0) {
+        triggerGuidedSpeech(0);
+      }
+    }
+  };
+
+  const pauseMeditationAudio = () => {
+    if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+    }
+    if (audioContextRef.current && audioContextRef.current.state === 'running') {
+      audioContextRef.current.suspend();
+    }
+  };
+
+  const stopMeditationAudio = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (audioContextRef.current) {
+      try {
+        if (osc1Ref.current) {
+          osc1Ref.current.stop();
+          osc1Ref.current.disconnect();
+        }
+        if (osc2Ref.current) {
+          osc2Ref.current.stop();
+          osc2Ref.current.disconnect();
+        }
+        if (lfoRef.current) {
+          lfoRef.current.stop();
+          lfoRef.current.disconnect();
+        }
+      } catch (e) {
+        console.warn('Error stopping oscillators:', e);
+      }
+      try {
+        audioContextRef.current.close();
+      } catch (e) {
+        console.warn('Error closing AudioContext:', e);
+      }
+      audioContextRef.current = null;
+      osc1Ref.current = null;
+      osc2Ref.current = null;
+      gainNodeRef.current = null;
+      lfoRef.current = null;
+    }
+  };
 
   /**
    * Fetches self-help resources from the backend API.
@@ -113,24 +281,44 @@ export default function ResourcesPage() {
     return () => clearInterval(interval);
   }, [breathingActive, breathingPhase, breathingCycle, selectedResource]);
 
-  // Meditation Timer Loop
+  // Meditation Timer Loop (updates visual time and triggers audio narration triggers)
   useEffect(() => {
     let interval = null;
     if (mediaPlaying) {
       interval = setInterval(() => {
         setMediaTime((prev) => {
-          if (prev >= 300) {
+          const nextTime = prev + 1;
+          if (nextTime >= 300) {
             setMediaPlaying(false);
+            stopMeditationAudio(); // Stop synthesis and sound fully
             return 300;
           }
-          return prev + 1;
+          triggerGuidedSpeech(nextTime); // Speak calming guidance in Spanish at specific times
+          return nextTime;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [mediaPlaying]);
 
+  // Synchronize play/pause state changes to the Web Audio & Web Speech synthesis engine
+  useEffect(() => {
+    if (mediaPlaying) {
+      startMeditationAudio();
+    } else {
+      pauseMeditationAudio();
+    }
+  }, [mediaPlaying]);
+
+  // Clear all audio, oscillators, filter nodes and speech queues upon component unmount
+  useEffect(() => {
+    return () => {
+      stopMeditationAudio();
+    };
+  }, []);
+
   function handleCloseModal() {
+    stopMeditationAudio(); // Stop any running binaural beat or speech synthesizers safely
     setSelectedResource(null);
     // Reset all interactive states
     setBreathingActive(false);
