@@ -68,6 +68,8 @@ export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
 
   // UI state
   const [isLoading, setIsLoading] = useState(false);
@@ -118,6 +120,12 @@ export default function LoginPage({ onLogin }) {
     const { data, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+        },
+      },
     });
 
     if (authError) {
@@ -140,6 +148,10 @@ export default function LoginPage({ onLogin }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!email || !password) return;
+    if (isSignUpMode && (!firstName.trim() || !lastName.trim())) {
+      setError('Ingresa tu nombre y apellido para crear tu cuenta.');
+      return;
+    }
 
     setError(null);
     setSignUpSuccess(false);
@@ -195,6 +207,34 @@ export default function LoginPage({ onLogin }) {
         )}
 
         <form onSubmit={handleSubmit} className="login-page__form">
+          {isSignUpMode && (
+            <>
+              <div className="login-page__field">
+                <label htmlFor="login-first-name">Nombre</label>
+                <input
+                  id="login-first-name"
+                  type="text"
+                  placeholder="Nataly"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+              <div className="login-page__field">
+                <label htmlFor="login-last-name">Apellido</label>
+                <input
+                  id="login-last-name"
+                  type="text"
+                  placeholder="Tobar"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+            </>
+          )}
           <div className="login-page__field">
             <label htmlFor="login-email">Correo Institucional</label>
             <input

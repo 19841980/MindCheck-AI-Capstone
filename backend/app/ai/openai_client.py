@@ -21,13 +21,13 @@ from openai import AsyncOpenAI, RateLimitError, APITimeoutError, AuthenticationE
 import asyncio
 
 from app.core.config import get_settings
-from app.ai.prompts.sentiment_prompts import SENTIMENT_ANALYSIS_PROMPT_V1
+from app.ai.prompts.sentiment_prompts import SENTIMENT_ANALYSIS_PROMPT_V2
 from app.schemas.journal import SentimentAnalysisResponse
 
 logger = logging.getLogger("mindcheck.ai")
 
 # Current prompt version in use
-ACTIVE_PROMPT = SENTIMENT_ANALYSIS_PROMPT_V1
+ACTIVE_PROMPT = SENTIMENT_ANALYSIS_PROMPT_V2
 
 
 class OpenAIClient:

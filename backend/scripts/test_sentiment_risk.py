@@ -41,10 +41,7 @@ LOW_RISK_ENTRY = (
 )
 
 CRITICAL_RISK_ENTRY = (
-    "Ya no doy más, de verdad la frustración y la pena me están consumiendo por completo. "
-    "Siento una desesperanza extrema, como si todo estuviera perdido y no hubiera salida para mí. "
-    "He estado pensando seriamente en autolesionarme o en terminar con todo de una vez por todas. "
-    "No me atrevo a hablar con nadie porque siento que soy un estorbo para todos."
+    "No puedo más, me siento sola, no quiero seguir así, no tengo energía ni ganas de nada"
 )
 
 # --- Mocked AI Responses ---

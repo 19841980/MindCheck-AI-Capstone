@@ -46,17 +46,33 @@ function buildUserFromSession(supabaseUser) {
   const email = supabaseUser.email || '';
   const meta = supabaseUser.user_metadata || {};
 
-  // Derive display name from metadata or email prefix
-  const firstName = meta.first_name || meta.firstName || email.split('@')[0].split('.')[0] || 'Estudiante';
-  const lastName = meta.last_name || meta.lastName || email.split('@')[0].split('.')[1] || '';
-  const capitalizedFirst = firstName.charAt(0).toUpperCase() + firstName.slice(1);
-  const capitalizedLast = lastName.charAt(0).toUpperCase() + lastName.slice(1);
+  let firstName = meta.first_name || meta.firstName;
+  let lastName = meta.last_name || meta.lastName;
+
+  // Improve fallback for already registered users who don't have first_name/last_name in metadata:
+  // "nat.tobar@duocuc.cl" -> firstName: "Nat Tobar", initials: "NT"
+  if (!firstName) {
+    const prefix = email.split('@')[0];
+    if (prefix.includes('.')) {
+      const parts = prefix.split('.');
+      const capFirst = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+      const capLast = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+      firstName = `${capFirst} ${capLast}`;
+      lastName = capLast;
+    } else {
+      firstName = prefix.charAt(0).toUpperCase() + prefix.slice(1) || 'Estudiante';
+      lastName = '';
+    }
+  } else {
+    firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+    lastName = (lastName || '').charAt(0).toUpperCase() + (lastName || '').slice(1);
+  }
 
   return {
     id: supabaseUser.id,
-    firstName: capitalizedFirst,
-    lastName: capitalizedLast,
-    initials: `${capitalizedFirst.charAt(0)}${capitalizedLast.charAt(0) || ''}`.toUpperCase(),
+    firstName,
+    lastName,
+    initials: `${firstName.charAt(0)}${lastName ? lastName.charAt(0) : ''}`.toUpperCase(),
     email,
     sede: meta.sede || 'Sin asignar',
     carrera: meta.carrera || 'Sin asignar',

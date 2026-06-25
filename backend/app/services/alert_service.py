@@ -108,21 +108,41 @@ class AlertDetectionService:
         Pure evaluation logic — determines if an alert should be triggered.
         Does NOT persist anything.
         """
-        # Check for critical indicators in the latest analysis
-        if latest_analysis and latest_analysis.get("crisis_indicators"):
-            logger.warning(
-                "CRITICAL: Crisis indicators detected.",
-                extra={"student_id_hash": hash(str(student_id))},
-            )
-            return {
-                "alert_type": "critico",
-                "risk_level": "critico",
-                "message": (
-                    "Se detectaron indicadores que requieren atención inmediata. "
-                    "Un profesional de bienestar ha sido notificado."
-                ),
-                "action": "notify_bienestar_team",
-            }
+        # Check for critical indicators or critical/high risk level in the latest analysis
+        if latest_analysis:
+            risk_level_normalized = str(latest_analysis.get("risk_level") or "").strip().lower()
+            is_critico = risk_level_normalized in ("critico", "crítico")
+            is_alto = risk_level_normalized == "alto"
+
+            if latest_analysis.get("crisis_indicators") is True or is_critico:
+                logger.warning(
+                    "CRITICAL: Crisis indicators or critical risk level detected.",
+                    extra={"student_id_hash": hash(str(student_id))},
+                )
+                return {
+                    "alert_type": "critico",
+                    "risk_level": "critico",
+                    "message": (
+                        "Se detectaron indicadores que requieren atención inmediata. "
+                        "Un profesional de bienestar ha sido notificado."
+                    ),
+                    "action": "notify_bienestar_team",
+                }
+
+            if is_alto:
+                logger.warning(
+                    "HIGH: High risk level detected in latest entry.",
+                    extra={"student_id_hash": hash(str(student_id))},
+                )
+                return {
+                    "alert_type": "alto",
+                    "risk_level": "alto",
+                    "message": (
+                        "Se detectaron señales de malestar significativo. "
+                        "Te sugerimos contactar al equipo de bienestar de Duoc UC."
+                    ),
+                    "action": "alert_student_and_suggest_contact",
+                }
 
         # Count negative entries in the last 7 days (sync repo → executor)
         loop = asyncio.get_event_loop()
