@@ -113,6 +113,8 @@ function AppLayout({ user, darkMode, onToggleDarkMode, onLogout }) {
   return (
     <div className="app-layout">
       <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         notificationCount={unreadAlertCount}
         darkMode={darkMode}
         onToggleDarkMode={onToggleDarkMode}

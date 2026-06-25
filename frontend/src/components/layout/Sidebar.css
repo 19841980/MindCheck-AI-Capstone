@@ -164,8 +164,20 @@
 @media (max-width: 1023px) {
   .sidebar {
     transform: translateX(-100%);
+    position: fixed;
+    z-index: 1000;
   }
   .sidebar--open {
     transform: translateX(0);
+  }
+  .sidebar__backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 999;
   }
 }
