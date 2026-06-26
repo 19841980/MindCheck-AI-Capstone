@@ -203,7 +203,7 @@ export default function HomePage() {
       <div className="home-page__main">
         {/* Greeting */}
         <div className="home-page__greeting animate-fade-in">
-          <span className="home-page__date">{formatDate(now.toISOString())} · {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} AM</span>
+          <span className="home-page__date">{formatDate(now.toISOString())} · {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
           <h1 className="home-page__title">
             {greeting}, {displayName} 👋 ¿Cómo estás hoy?
           </h1>
