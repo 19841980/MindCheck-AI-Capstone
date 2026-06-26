@@ -9,7 +9,7 @@ import './JournalCard.css';
  *
  * States: expanded, collapsed, loading
  */
-export default function JournalCard({ entry, state = 'collapsed' }) {
+export default function JournalCard({ entry, state = 'collapsed', onClick }) {
   if (state === 'loading') {
     return (
       <article className="journal-card journal-card--loading" aria-busy="true">
@@ -46,8 +46,22 @@ export default function JournalCard({ entry, state = 'collapsed' }) {
       ? 'var(--color-sentiment-negative-bg)'
       : 'var(--color-sentiment-neutral-bg)';
 
+  const isClickable = !!onClick;
+
   return (
-    <article className="journal-card animate-fade-in" id={`journal-entry-${entry.id}`}>
+    <article
+      className={`journal-card animate-fade-in ${isClickable ? 'journal-card--clickable' : ''}`}
+      id={`journal-entry-${entry.id}`}
+      onClick={onClick}
+      role={isClickable ? 'button' : 'article'}
+      tabIndex={isClickable ? 0 : undefined}
+      onKeyDown={isClickable ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
+    >
       <div className="journal-card__score-col">
         <div
           className="journal-card__score"

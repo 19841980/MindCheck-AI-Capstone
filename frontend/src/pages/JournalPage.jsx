@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, Trash2, ChevronDown, RefreshCw } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, ChevronDown, RefreshCw, X, Loader2, AlertCircle } from 'lucide-react';
 import JournalCard from '../components/molecules/JournalCard';
+import EmotionBadge from '../components/atoms/EmotionBadge';
+import RiskIndicator from '../components/atoms/RiskIndicator';
 import { journalApi } from '../services/api';
 import { MOCK_JOURNAL_ENTRIES } from '../data/mockData';
+import { formatDate, formatTime } from '../utils/dateUtils';
 import './JournalPage.css';
 
 /**
@@ -38,6 +41,62 @@ export default function JournalPage() {
   const [filterEmotion, setFilterEmotion] = useState('all');
   const [filterRisk, setFilterRisk] = useState('all');
   const [deletingEntryId, setDeletingEntryId] = useState(null);
+
+  // States for interactive detail decryption modal
+  const [selectedEntryDetail, setSelectedEntryDetail] = useState(null);
+  const [selectedEntryForModal, setSelectedEntryForModal] = useState(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
+  async function handleOpenDetail(entry) {
+    setSelectedEntryForModal(entry);
+    setSelectedEntryDetail(null);
+    setIsDetailLoading(true);
+    setDetailError(null);
+    setShowDetailModal(true);
+
+    if (entry.id.startsWith('entry-')) {
+      const mockDetail = MOCK_JOURNAL_ENTRIES.find((e) => e.id === entry.id);
+      setSelectedEntryDetail({
+        entry: {
+          id: mockDetail.id,
+          content_decrypted: mockDetail.content,
+          created_at: mockDetail.createdAt,
+          sentiment_score: mockDetail.sentimentScore,
+          dominant_emotion: mockDetail.dominantEmotion,
+          risk_level: mockDetail.riskLevel,
+          keywords: mockDetail.keywords,
+        },
+        analysis: {
+          sentiment_score: mockDetail.sentimentScore,
+          dominant_emotion: mockDetail.dominantEmotion,
+          risk_level: mockDetail.riskLevel,
+          keywords: mockDetail.keywords,
+          recommendations: mockDetail.recommendations || [],
+          risk_justification: 'Análisis generado para demostración.',
+        },
+      });
+      setIsDetailLoading(false);
+      return;
+    }
+
+    try {
+      const response = await journalApi.getEntryDetail(entry.id);
+      setSelectedEntryDetail(response);
+    } catch (err) {
+      setDetailError('No se pudo descifrar la entrada. Intenta nuevamente.');
+    } finally {
+      setIsDetailLoading(false);
+    }
+  }
+
+  function handleCloseDetailModal() {
+    setShowDetailModal(false);
+    setSelectedEntryForModal(null);
+    setSelectedEntryDetail(null);
+    setDetailError(null);
+  }
 
   /**
    * Fetches journal entries from the backend API.
@@ -198,7 +257,7 @@ export default function JournalPage() {
           filteredEntries.map((entry, i) => (
             <div key={entry.id} className="animate-fade-in" style={{ animationDelay: `${i * 0.05}s` }}>
               <div className="journal-page__entry-wrapper">
-                <JournalCard entry={entry} />
+                <JournalCard entry={entry} onClick={() => handleOpenDetail(entry)} />
                 <button
                   className="journal-page__delete-btn"
                   onClick={() => handleDeleteEntry(entry.id)}
@@ -213,6 +272,124 @@ export default function JournalPage() {
           ))
         )}
       </div>
+
+      {/* Modal de Detalle de Bitácora (Descifrado) */}
+      {showDetailModal && (
+        <div className="journal-modal-overlay animate-fade-in" onClick={handleCloseDetailModal}>
+          <div className="journal-modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="journal-modal-close"
+              onClick={handleCloseDetailModal}
+              aria-label="Cerrar detalle"
+              id="btn-close-journal-modal"
+            >
+              <X size={20} />
+            </button>
+
+            {isDetailLoading ? (
+              <div className="journal-modal__loading">
+                <Loader2 size={32} className="spin" />
+                <p>Descifrando entrada con seguridad AES-256...</p>
+              </div>
+            ) : detailError ? (
+              <div className="journal-modal__error">
+                <AlertCircle size={32} />
+                <p>{detailError}</p>
+                <button onClick={() => handleOpenDetail(selectedEntryForModal)} className="journal-page__retry-btn">
+                  Intentar nuevamente
+                </button>
+              </div>
+            ) : selectedEntryDetail ? (
+              <div className="journal-modal__body">
+                <div className="journal-modal__header">
+                  <span className="journal-modal__date">
+                    {formatDate(selectedEntryDetail.entry.created_at || selectedEntryDetail.entry.createdAt)} a las {formatTime(selectedEntryDetail.entry.created_at || selectedEntryDetail.entry.createdAt)}
+                  </span>
+                  <div className="journal-modal__badges">
+                    <EmotionBadge emotion={selectedEntryDetail.analysis?.dominant_emotion || selectedEntryDetail.entry.dominant_emotion} size="md" />
+                    <RiskIndicator level={selectedEntryDetail.analysis?.risk_level || selectedEntryDetail.entry.risk_level} size="md" />
+                  </div>
+                </div>
+
+                <div className="journal-modal__score-section">
+                  <div className="journal-modal__score-wrapper">
+                    <span className="journal-modal__score-label">Puntaje de Sentimiento</span>
+                    <div 
+                      className="journal-modal__score-badge"
+                      style={{ 
+                        color: (selectedEntryDetail.analysis?.sentiment_score ?? 0) >= 0.3
+                          ? 'var(--color-sentiment-positive)'
+                          : (selectedEntryDetail.analysis?.sentiment_score ?? 0) <= -0.3
+                            ? 'var(--color-sentiment-negative)'
+                            : 'var(--color-sentiment-neutral)',
+                        backgroundColor: (selectedEntryDetail.analysis?.sentiment_score ?? 0) >= 0.3
+                          ? 'var(--color-sentiment-positive-bg)'
+                          : (selectedEntryDetail.analysis?.sentiment_score ?? 0) <= -0.3
+                            ? 'var(--color-sentiment-negative-bg)'
+                            : 'var(--color-sentiment-neutral-bg)'
+                      }}
+                    >
+                      {(selectedEntryDetail.analysis?.sentiment_score ?? 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="journal-modal__content-section">
+                  <h3>Bitácora Escrita</h3>
+                  <div className="journal-modal__text-box">
+                    "{selectedEntryDetail.entry.content_decrypted}"
+                  </div>
+                </div>
+
+                {selectedEntryDetail.analysis?.keywords && selectedEntryDetail.analysis.keywords.length > 0 && (
+                  <div className="journal-modal__keywords-section">
+                    <h3>Conceptos Clave Detectados</h3>
+                    <div className="journal-modal__keywords">
+                      {selectedEntryDetail.analysis.keywords.map((kw) => (
+                        <span key={kw} className="journal-modal__keyword">{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedEntryDetail.analysis?.risk_justification && (
+                  <div className="journal-modal__justification-section">
+                    <h3>Justificación del Nivel de Riesgo</h3>
+                    <p className="journal-modal__justification-text">
+                      {selectedEntryDetail.analysis.risk_justification}
+                    </p>
+                  </div>
+                )}
+
+                {selectedEntryDetail.analysis?.recommendations && selectedEntryDetail.analysis.recommendations.length > 0 && (
+                  <div className="journal-modal__recommendations-section">
+                    <h3>Recomendaciones de Apoyo Generadas</h3>
+                    <ul className="journal-modal__recommendations-list">
+                      {selectedEntryDetail.analysis.recommendations.map((rec, index) => (
+                        <li key={index} className="journal-modal__recommendation-item">
+                          💡 {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                <div className="journal-modal__footer">
+                  <button
+                    className="journal-modal__delete-btn"
+                    onClick={() => {
+                      handleDeleteEntry(selectedEntryDetail.entry.id);
+                      setShowDetailModal(false);
+                    }}
+                  >
+                    <Trash2 size={16} /> Eliminar Entrada
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

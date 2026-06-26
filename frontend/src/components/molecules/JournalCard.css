@@ -9,6 +9,16 @@
   cursor: default;
 }
 
+.journal-card--clickable {
+  cursor: pointer;
+  outline: none;
+}
+
+.journal-card--clickable:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
+}
+
 .journal-card:hover {
   box-shadow: var(--shadow-card-hover);
   border-color: var(--color-border);
